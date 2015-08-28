@@ -47,6 +47,67 @@ struct Config
    };
    using UserTokens = std::map<std::string, Tokens>;
    UserTokens user_tokens;
+
+   std::string config_file()
+   {
+      struct passwd *pw = getpwuid(getuid());
+      char const* homedir = pw->pw_dir;
+      auto path = boost::filesystem::path{homedir};
+      path /= ".slinger_config";
+      return path.native();
+   }
+
+   void load()
+   {
+      auto file = std::ifstream{config_file()};
+
+      auto json = json::value{};
+      try
+      {
+         file >> json;
+      }
+      catch(...)
+      {
+      }
+
+      if(!json.is_null())
+      {
+         client_id = json["client_id"].as_string();
+         client_secret = json["client_secret"].as_string();
+         for(auto& element: json["user_tokens"].as_array())
+         {
+            user_tokens[element["username"].as_string()] = {element["access_token"].as_string(), element["refresh_token"].as_string()};
+         }
+      }
+   }
+
+   void save()
+   {
+      auto file = std::ofstream{config_file()};
+
+      auto json = json::value{};
+      json["client_id"] = json::value(client_id);
+      json["client_secret"] = json::value(client_secret);
+
+      auto token_config = json::value{};
+      auto i = 0;
+      for(auto const& value: user_tokens)
+      {
+         auto& token = token_config[i];
+         token["username"] = json::value(value.first);
+         token["access_token"] = json::value(value.second.access_token);
+         token["refresh_token"] = json::value(value.second.refresh_token);
+         ++i;
+      }
+      json["user_tokens"] = token_config;
+
+      file << json;
+   }
+
+   bool valid() const
+   {
+      return !client_id.empty() && !client_secret.empty();
+   }
 };
 
 oauth2_config authenticate(Config& config, std::string const& username)
@@ -89,6 +150,10 @@ oauth2_config authenticate(Config& config, std::string const& username)
 
       open_browser(auth_uri);
       auth_task.wait();
+
+      auto const& token = oauth_config.token();
+      user_tokens.access_token = token.access_token();
+      user_tokens.refresh_token = token.refresh_token();
    }
    else
    {
@@ -98,6 +163,7 @@ oauth2_config authenticate(Config& config, std::string const& username)
       oauth_config.token_from_refresh().wait();
    }
 
+   config.save();
    return oauth_config;
 }
 
@@ -156,64 +222,6 @@ size_t save_playlist(http_client& client, uri playlist_uri, Stream& output)
    return num;
 }
 
-std::string config_file()
-{
-   struct passwd *pw = getpwuid(getuid());
-   char const* homedir = pw->pw_dir;
-   auto path = boost::filesystem::path{homedir};
-   path /= ".slinger_config";
-   return path.native();
-}
-
-Config load_config()
-{
-   auto file = std::ifstream{config_file()};
-
-   auto json = json::value{};
-   try
-   {
-      file >> json;
-   }
-   catch(...)
-   {
-   }
-
-   auto config = Config{};
-   if(!json.is_null())
-   {
-      config.client_id = json["client_id"].as_string();
-      config.client_secret = json["client_secret"].as_string();
-      for(auto& element: json["user_tokens"].as_array())
-      {
-         config.user_tokens[element["username"].as_string()] = {element["access_token"].as_string(), element["refresh_token"].as_string()};
-      }
-   }
-   return config;
-}
-
-void save_config(Config const& config)
-{
-   auto file = std::ofstream{config_file()};
-
-   auto json = json::value{};
-   json["client_id"] = json::value(config.client_id);
-   json["client_secret"] = json::value(config.client_secret);
-
-   auto token_config = json::value{};
-   auto i = 0;
-   for(auto const& value: config.user_tokens)
-   {
-      auto& token = token_config[i];
-      token["username"] = json::value(value.first);
-      token["access_token"] = json::value(value.second.access_token);
-      token["refresh_token"] = json::value(value.second.refresh_token);
-      ++i;
-   }
-   json["user_tokens"] = token_config;
-
-   file << json;
-}
-
 int main(int argc, char** argv)
 {
    auto client_id = std::string{};
@@ -253,11 +261,19 @@ int main(int argc, char** argv)
       return 1;
    }
 
-   auto config = load_config();
+   auto config = Config{};
+   config.load();
+
    if(!client_id.empty())
       config.client_id = client_id;
    if(!client_secret.empty())
       config.client_secret = client_secret;
+
+   if(!config.valid())
+   {
+      LOG_ERROR << "Error: supply client id and secret";
+      return 1;
+   }
 
    auto oauth_config = authenticate(config, username);
 
