@@ -28,3 +28,4 @@ slinger
 #temp files
 *.swp
 .depend
+*.csv
