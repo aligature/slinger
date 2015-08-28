@@ -1,15 +1,16 @@
 CXX=g++
 RM=rm -f
-CPPFLAGS = -Wall --std=c++11 -I/opt/local/include -I/opt/build/cpprest/include
-LDLIBS = -L/opt/local/lib -L/opt/build/cpprest/lib -lboost_system-mt -lboost_thread-mt -lboost_chrono-mt -lcpprest
+CPPFLAGS = -Wall --std=c++14 -I/opt/local/include -I/opt/build/cpprest/include -DBOOST_LOG_DYN_LINK
+LDLIBS = -L/opt/local/lib -L/opt/build/cpprest/lib -lboost_system-mt -lboost_thread-mt -lboost_chrono-mt -lboost_program_options-mt -lboost_log-mt -lboost_log_setup-mt -lcpprest
 
 SOURCES=main.cpp
 OBJECTS=$(subst .cpp,.o,$(SOURCES))
+OUTPUT=slinger
 
-all: slinger
+all: $(OUTPUT)
 
-slinger: $(OBJECTS)
-	g++ -o slinger $(OBJECTS) $(LDLIBS)
+$(OUTPUT): $(OBJECTS)
+	g++ -o $(OUTPUT) $(OBJECTS) $(LDLIBS)
 
 depend: .depend
 
@@ -18,6 +19,6 @@ depend: .depend
 	g++ $(CPPFLAGS) -MM $(SOURCES) >>./.depend;
 
 clean:
-	rm -f $(OBJS)
+	rm -f $(OBJECTS) $(OUTPUT)
 
 include .depend
