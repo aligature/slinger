@@ -25,6 +25,9 @@
 /* Begin PBXFileReference section */
 		A1CB14C11B97D153000EF839 /* slinger */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = slinger; sourceTree = BUILT_PRODUCTS_DIR; };
 		A1CB14C41B97D153000EF839 /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
+		A1DAAFDC1B97DC71000EF839 /* log_macros.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = log_macros.h; sourceTree = "<group>"; };
+		A1DAAFDD1B97DC71000EF839 /* open_browser.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = open_browser.h; sourceTree = "<group>"; };
+		A1DAAFE01B97E5AD000EF839 /* spotify_api.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = spotify_api.h; path = spotify_api/spotify_api.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -41,6 +44,7 @@
 		A1CB14B81B97D153000EF839 = {
 			isa = PBXGroup;
 			children = (
+				A1DAAFDF1B97DF27000EF839 /* spotify_api */,
 				A1CB14C31B97D153000EF839 /* slinger */,
 				A1CB14C21B97D153000EF839 /* Products */,
 			);
@@ -58,8 +62,18 @@
 			isa = PBXGroup;
 			children = (
 				A1CB14C41B97D153000EF839 /* main.cpp */,
+				A1DAAFDC1B97DC71000EF839 /* log_macros.h */,
+				A1DAAFDD1B97DC71000EF839 /* open_browser.h */,
 			);
 			path = slinger;
+			sourceTree = "<group>";
+		};
+		A1DAAFDF1B97DF27000EF839 /* spotify_api */ = {
+			isa = PBXGroup;
+			children = (
+				A1DAAFE01B97E5AD000EF839 /* spotify_api.h */,
+			);
+			name = spotify_api;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -210,6 +224,7 @@
 				HEADER_SEARCH_PATHS = (
 					"$(inherited)",
 					/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include,
+					.,
 				);
 				LIBRARY_SEARCH_PATHS = (
 					/opt/local/lib,
@@ -244,6 +259,7 @@
 				HEADER_SEARCH_PATHS = (
 					"$(inherited)",
 					/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include,
+					.,
 				);
 				LIBRARY_SEARCH_PATHS = (
 					/opt/local/lib,
