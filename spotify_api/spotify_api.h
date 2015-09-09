@@ -11,7 +11,9 @@
 #include <cpprest/http_client.h>
 #include <cpprest/http_listener.h>
 
+#include <boost/algorithm/string.hpp>
 #include <boost/filesystem.hpp>
+#include <boost/range/algorithm_ext/push_back.hpp>
 
 #include <unistd.h>
 #include <sys/types.h>
@@ -52,6 +54,13 @@ namespace spotify { namespace api {
         Tracks tracks;
     };
     
+    template<typename T>
+    struct Paged
+    {
+        T values;
+        std::string next_uri;
+    };
+    
     class Session
     {
     public:
@@ -78,8 +87,10 @@ namespace spotify { namespace api {
         bool open();
         Playlist get_playlist(std::string uri);
         Playlist get_playlist(json::value& value);
-        Playlist::Tracks get_playlist_page(std::string uri);
-        Playlist::Tracks get_playlist_page(json::value& value);
+        
+        using PagedTracks = Paged<Playlist::Tracks>;
+        PagedTracks get_playlist_page(std::string uri);
+        PagedTracks get_playlist_page(json::value& value);
         Playlist::Tracks get_playlist_tracks(json::value& value);
         
         struct Config
@@ -201,10 +212,13 @@ namespace spotify { namespace api {
                              [&](auto request)
                              {
                                  auto uri = request.request_uri();
-                                 oauth.token_from_redirected_uri(uri).wait();
-                                 token = oauth.token();
-                                 request.reply(status_codes::OK, "welcome to using slinger. enjoy.").wait();
-                                 auth_event.set();
+                                 if(!boost::algorithm::contains(uri.to_string(), "favicon"))
+                                 {
+                                     oauth.token_from_redirected_uri(uri).wait();
+                                     token = oauth.token();
+                                     request.reply(status_codes::OK, "welcome to using slinger. enjoy.").wait();
+                                     auth_event.set();
+                                 }
                              });
             listener.open().wait();
             
@@ -234,9 +248,7 @@ namespace spotify { namespace api {
         
         auto oauth = authenticate();
         
-        auto base_uri = uri_builder{"https://api.spotify.com/"};
-        //auto playlist_query = base_uri;
-        //playlist_query.append_path(playlist_url).append_query("market", "US");
+        auto base_uri = uri_builder{"https://api.spotify.com"};
         
         auto client_config = http_client_config{};
         client_config.set_oauth2(oauth);
@@ -249,7 +261,6 @@ namespace spotify { namespace api {
     {
         auto response = client_->request(methods::GET, url).get();
         response.content_ready().wait();
-        auto x = response.to_string();
         auto json = response.extract_json().get();
         
         return get_playlist(json);
@@ -260,19 +271,21 @@ namespace spotify { namespace api {
         auto playlist = Playlist{};
         
         playlist.name = json["name"].as_string();
-        //output << playlist_name << "\n";
-        //output << "track;album;artists;added at;uri\n";
+        playlist.uri = json["uri"].as_string();
         
-        playlist.tracks = get_playlist_page(json["tracks"]);
+        auto page = get_playlist_page(json["tracks"]);
+        boost::push_back(playlist.tracks, page.values);
         
-        //jauto num = save_playlist_page(client, page, output);
-        //jLOG_INFO << str(boost::format{"saved playlist \"%s\" with %s tracks"} % playlist_name % num);
-        //jreturn num;
+        while(!page.next_uri.empty())
+        {
+            page = get_playlist_page(page.next_uri);
+            boost::push_back(playlist.tracks, page.values);
+        }
         
         return playlist;
     }
     
-    Playlist::Tracks Session::get_playlist_page(std::string url)
+    Session::PagedTracks Session::get_playlist_page(std::string url)
     {
         auto response = client_->request(methods::GET, url).get();
         response.content_ready().wait();
@@ -281,18 +294,13 @@ namespace spotify { namespace api {
         return get_playlist_page(json);
     }
     
-    Playlist::Tracks Session::get_playlist_page(json::value& json)
+    Session::PagedTracks Session::get_playlist_page(json::value& json)
     {
         auto tracks = get_playlist_tracks(json);
         
         auto& next = json["next"];
-        if(!next.is_null())
-        {
-            auto next_tracks = get_playlist_page(next.as_string());
-            tracks.insert(tracks.end(), std::make_move_iterator(std::begin(next_tracks)), std::make_move_iterator(std::end(next_tracks)));
-        }
         
-        return tracks;
+        return {tracks, next.is_null() ? "" : next.as_string()};
     }
     
     Playlist::Tracks Session::get_playlist_tracks(json::value& json)
@@ -320,55 +328,10 @@ namespace spotify { namespace api {
                 track.artists.emplace_back(artist["name"].as_string());
             }
             tracks.emplace_back(std::move(track));
-            
-            //auto artists_string = boost::algorithm::join(artist_names, ",");
-            //output << boost::algorithm::join(string_vec{quote(track_name), quote(album_name), quote(artists_string), added_at, uri}, ",") << "\n";
         }
         
         return tracks;
     }
-    
-//    template<typename Stream>
-//    size_t save_playlist_page(http_client& client, json::value& page, Stream& output)
-//    {
-//        auto num = size_t{0};
-//        
-//        auto& tracks = page["items"].as_array();
-//        for(auto& playlist_track: tracks)
-//        {
-//            ++num;
-//            auto& track = playlist_track["track"];
-//            auto const& added_at = playlist_track["added_at"].as_string();
-//            auto const& album_name = track["album"]["name"].as_string();
-//            auto const& track_name = track["name"].as_string();
-//            auto& artists = track["artists"].as_array();
-//            auto const& uri = track["uri"].as_string();
-//            auto artist_names = string_vec{};
-//            for(auto& artist: artists)
-//            {
-//                artist_names.emplace_back(artist["name"].as_string());
-//            }
-//            auto artists_string = boost::algorithm::join(artist_names, ",");
-//            output << boost::algorithm::join(string_vec{quote(track_name), quote(album_name), quote(artists_string), added_at, uri}, ",") << "\n";
-//        }
-//        
-//        auto& next = page["next"];
-//        if(!next.is_null())
-//        {
-//            auto response = client.request(methods::GET, next.as_string()).get();
-//            response.content_ready().wait();
-//            auto json = response.extract_json().get();
-//            num += save_playlist_page(client, json, output);
-//        }
-//        
-//        return num;
-//    }
-//    
-//    template<typename Stream>
-//    size_t save_playlist(http_client& client, uri playlist_uri, Stream& output)
-//    {
-//    }
-    
     
 }
 }
