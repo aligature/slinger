@@ -76,6 +76,15 @@ int main(int argc, char** argv)
     session.open();
     
     auto playlist = session.get_playlist(playlist_url);
+    
+    std::cout << "got it" << std::endl;
+    
+        //output << playlist_name << "\n";
+        //output << "track;album;artists;added at;uri\n";
+            
+            //auto artists_string = boost::algorithm::join(artist_names, ",");
+            //output << boost::algorithm::join(string_vec{quote(track_name), quote(album_name), quote(artists_string), added_at, uri}, ",") << "\n";
+    
 //
 //    if(!config.valid())
 //    {
