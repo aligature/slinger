@@ -237,6 +237,8 @@
 					/opt/local/include,
 					"-isystem",
 					/opt/build/cpprest/include,
+					"-isystem",
+					"/opt/build/range-v3/include",
 				);
 				OTHER_LDFLAGS = (
 					"-lboost_system-mt",
@@ -272,6 +274,8 @@
 					/opt/local/include,
 					"-isystem",
 					/opt/build/cpprest/include,
+					"-isystem",
+					"/opt/build/range-v3/include",
 				);
 				OTHER_LDFLAGS = (
 					"-lboost_system-mt",

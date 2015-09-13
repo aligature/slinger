@@ -13,7 +13,9 @@
 
 #include <boost/algorithm/string.hpp>
 #include <boost/filesystem.hpp>
+#include <boost/format.hpp>
 #include <boost/range/algorithm_ext/push_back.hpp>
+#include <boost/range/irange.hpp>
 
 #include <unistd.h>
 #include <sys/types.h>
@@ -92,6 +94,9 @@ namespace spotify { namespace api {
         PagedTracks get_playlist_page(std::string uri);
         PagedTracks get_playlist_page(json::value& value);
         Playlist::Tracks get_playlist_tracks(json::value& value);
+        
+        static constexpr size_t MaxRequestTracks = 100;
+        bool set_playlist_tracks(std::string const& playlist, std::vector<std::string> const& uris);
         
         struct Config
         {
@@ -331,6 +336,38 @@ namespace spotify { namespace api {
         }
         
         return tracks;
+    }
+    
+    bool Session::set_playlist_tracks(std::string const& playlist, std::vector<std::string> const& uris)
+    {
+        auto url = str(boost::format("v1/users/%s/playlists/%s/tracks") % username_ % playlist);
+        auto json = json::value{};
+        auto& json_uris = json['uris'].as_array();
+        
+//        bool first_chunk = true;
+//        for(auto chunk: uris
+//            | ranges::view::remove_if([](std::string const& uri){ return boost::algorithm::starts_with(uri, "local"); })
+//            | ranges::view::chunk(MaxRequestTracks)
+//            | ranges::view::bounded)
+//        {
+//            for(auto const& uri: chunk | ranges::view::bounded)
+//            {
+//                json_uris[json_uris.size()] = json::value{uri};
+//            }
+//            
+//            auto method = methods::POST;
+//            if(first_chunk)
+//                method = methods::PUT;
+//            
+//            auto response = client_->request(method, url).get();
+//            auto status_code = response.status_code();
+//            auto success = (status_code == status_codes::OK || status_code == status_codes::Created);
+//            if(!success) return false;
+//            
+//            first_chunk = false;
+//        }
+        
+        return true;
     }
     
 }
