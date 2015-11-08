@@ -15,6 +15,7 @@
 #include <boost/filesystem.hpp>
 #include <boost/format.hpp>
 #include <boost/range/algorithm_ext/push_back.hpp>
+#include <boost/range/adaptors.hpp>
 #include <boost/range/irange.hpp>
 
 #include <unistd.h>
@@ -342,30 +343,36 @@ namespace spotify { namespace api {
     {
         auto url = str(boost::format("v1/users/%s/playlists/%s/tracks") % username_ % playlist);
         auto json = json::value{};
-        auto& json_uris = json['uris'].as_array();
+        auto json_uris = json::value::array();
         
-//        bool first_chunk = true;
-//        for(auto chunk: uris
-//            | ranges::view::remove_if([](std::string const& uri){ return boost::algorithm::starts_with(uri, "local"); })
-//            | ranges::view::chunk(MaxRequestTracks)
-//            | ranges::view::bounded)
-//        {
-//            for(auto const& uri: chunk | ranges::view::bounded)
-//            {
-//                json_uris[json_uris.size()] = json::value{uri};
-//            }
-//            
-//            auto method = methods::POST;
-//            if(first_chunk)
-//                method = methods::PUT;
-//            
-//            auto response = client_->request(method, url).get();
-//            auto status_code = response.status_code();
-//            auto success = (status_code == status_codes::OK || status_code == status_codes::Created);
-//            if(!success) return false;
-//            
-//            first_chunk = false;
-//        }
+        bool clear_playlist = true;
+        auto submit = [&, this]()
+        {
+            json["uris"] = json_uris;
+            auto method = methods::POST;
+            if(clear_playlist)
+            {
+                clear_playlist = false;
+                method = methods::PUT;
+            }
+            
+            auto response = client_->request(method, url, json).get();
+            
+            json_uris = json::value::array();
+            auto status_code = response.status_code();
+            if(status_code != status_codes::OK && status_code != status_codes::Created) return false;
+            return true;
+        };
+        
+        for(auto const& value: uris
+            | boost::adaptors::indexed())
+        {
+            json_uris[json_uris.size()] = json::value{value.value()};
+            if(json_uris.size() == MaxRequestTracks)
+                if(!submit()) return false;
+        }
+        if(json_uris.size())
+            if(!submit()) return false;
         
         return true;
     }

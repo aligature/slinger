@@ -4,8 +4,10 @@
 #include "spotify_api/spotify_api.h"
 
 #include <boost/algorithm/string/join.hpp>
+#include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/format.hpp>
 #include <boost/program_options.hpp>
+#include <boost/range/algorithm_ext/erase.hpp>
 
 #include <fstream>
 #include <iostream>
@@ -22,7 +24,11 @@ std::string quote(std::string const& in)
     return "\"" + in + "\"";
 }
 
-
+boost::posix_time::ptime get_ptime_from_8601(std::string input)
+{
+    boost::remove_erase_if(input, boost::is_any_of(":-"));
+    return boost::posix_time::from_iso_string(input);
+}
 
 int main(int argc, char** argv)
 {
@@ -30,14 +36,18 @@ int main(int argc, char** argv)
     auto client_secret = std::string{};
     auto access_token = std::string{};
     auto refresh_token = std::string{};
-    auto playlist_url = std::string{};
+    auto source_playlist_url = std::string{};
+    auto target_playlist_uri = std::string{};
     auto backup_file = std::string{};
     auto username = std::string{};
+    auto filter_months = 0;
     
     auto options = po::options_description{"Allowed options"};
     options.add_options()
     ("help", "produce help message")
-    ("playlist-url", po::value(&playlist_url)->required(), "spotify playlist url")
+    ("source-playlist-url", po::value(&source_playlist_url)->required(), "source spotify playlist url")
+    ("target-playlist-uri", po::value(&target_playlist_uri)->required(), "target spotify playlist uri")
+    ("filter-months", po::value(&filter_months)->required(), "recent playlist months")
     ("username", po::value(&username)->required(), "spotify username")
     ("backup-file", po::value(&backup_file), "backup output file")
     
@@ -75,24 +85,19 @@ int main(int argc, char** argv)
     }
     session.open();
     
-    auto playlist = session.get_playlist(playlist_url);
+    auto playlist = session.get_playlist(source_playlist_url);
     
-    std::cout << "got it" << std::endl;
+    auto cutoff_time = boost::posix_time::second_clock::universal_time() - boost::gregorian::months(filter_months);
     
-        //output << playlist_name << "\n";
-        //output << "track;album;artists;added at;uri\n";
-            
-            //auto artists_string = boost::algorithm::join(artist_names, ",");
-            //output << boost::algorithm::join(string_vec{quote(track_name), quote(album_name), quote(artists_string), added_at, uri}, ",") << "\n";
+    auto tracks = std::vector<std::string>{};
+    boost::push_back(tracks, playlist.tracks
+                     | boost::adaptors::reversed
+                     | boost::adaptors::filtered(
+                                                 [cutoff_time](auto const& track)
+                                                 {
+                                                     return !boost::algorithm::starts_with(track.uri, "spotify:local") && get_ptime_from_8601(track.added_at) > cutoff_time;
+                                                 })
+                     | boost::adaptors::transformed([](auto const& track) { return track.uri; }));
     
-//
-//    if(!config.valid())
-//    {
-//        LOG_ERROR << "Error: supply client id and secret";
-//        return 1;
-//    }
-    
-    
-    //auto output = std::ofstream{backup_file};
-    //save_playlist(client, playlist_query.to_uri(), output);
+    session.set_playlist_tracks(target_playlist_uri, tracks);
 }
