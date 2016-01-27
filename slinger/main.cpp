@@ -63,7 +63,7 @@ int main(int argc, char** argv)
         
         if (vm.count("help"))
         {
-            LOG_ERROR << options;
+            std::cout << options;
             return 1;
         }
     }
