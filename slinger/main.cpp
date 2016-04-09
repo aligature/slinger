@@ -66,6 +66,34 @@ int main(int argc, char** argv)
             std::cout << options;
             return 1;
         }
+        
+        auto session = spotify::api::Session{};
+        
+        if(!client_id.empty() || !client_secret.empty())
+        {
+            session = spotify::api::Session{username, client_id, client_secret};
+        }
+        else
+        {
+            session = spotify::api::Session{username};
+        }
+        session.open();
+        
+        auto playlist = session.get_playlist(source_playlist_url);
+        
+        auto cutoff_time = boost::posix_time::second_clock::universal_time() - boost::gregorian::months(filter_months);
+        
+        auto tracks = std::vector<std::string>{};
+        boost::push_back(tracks, playlist.tracks
+                         | boost::adaptors::reversed
+                         | boost::adaptors::filtered(
+                                                     [cutoff_time](auto const& track)
+                                                     {
+                                                         return !boost::algorithm::starts_with(track.uri, "spotify:local") && get_ptime_from_8601(track.added_at) > cutoff_time;
+                                                     })
+                         | boost::adaptors::transformed([](auto const& track) { return track.uri; }));
+        
+        session.set_playlist_tracks(target_playlist_uri, tracks);
     }
     catch(std::exception const& e)
     {
@@ -73,31 +101,4 @@ int main(int argc, char** argv)
         return 1;
     }
     
-    auto session = spotify::api::Session{};
-    
-    if(!client_id.empty() || !client_secret.empty())
-    {
-        session = spotify::api::Session{username, client_id, client_secret};
-    }
-    else
-    {
-        session = spotify::api::Session{username};
-    }
-    session.open();
-    
-    auto playlist = session.get_playlist(source_playlist_url);
-    
-    auto cutoff_time = boost::posix_time::second_clock::universal_time() - boost::gregorian::months(filter_months);
-    
-    auto tracks = std::vector<std::string>{};
-    boost::push_back(tracks, playlist.tracks
-                     | boost::adaptors::reversed
-                     | boost::adaptors::filtered(
-                                                 [cutoff_time](auto const& track)
-                                                 {
-                                                     return !boost::algorithm::starts_with(track.uri, "spotify:local") && get_ptime_from_8601(track.added_at) > cutoff_time;
-                                                 })
-                     | boost::adaptors::transformed([](auto const& track) { return track.uri; }));
-    
-    session.set_playlist_tracks(target_playlist_uri, tracks);
 }
