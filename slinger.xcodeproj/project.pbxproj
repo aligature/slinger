@@ -229,7 +229,7 @@
 					/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include,
 					.,
 				);
-				LD_RUNPATH_SEARCH_PATHS = /opt/build/cpprest/lib_debug;
+				LD_RUNPATH_SEARCH_PATHS = /opt/build/cpprest/lib;
 				LIBRARY_SEARCH_PATHS = (
 					/opt/local/lib,
 					/opt/build/cpprest/lib,
