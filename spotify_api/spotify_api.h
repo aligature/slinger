@@ -318,8 +318,14 @@ namespace spotify { namespace api {
         {
             auto& json_track = playlist_track["track"];
             auto const& added_at = playlist_track["added_at"].as_string();
+            auto& json_track_name = json_track["name"];
+            if(json_track_name.is_null())
+            {
+                LOG_ERROR << "error processing track added at " << added_at;
+                continue;
+            }
+            auto const& track_name = json_track_name.as_string();
             auto const& album_name = json_track["album"]["name"].as_string();
-            auto const& track_name = json_track["name"].as_string();
             auto const& uri = json_track["uri"].as_string();
             
             auto track = PlaylistTrack{};
