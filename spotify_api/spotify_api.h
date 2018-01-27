@@ -321,7 +321,7 @@ namespace spotify { namespace api {
             auto& json_track_name = json_track["name"];
             if(json_track_name.is_null())
             {
-                LOG_ERROR << "error processing track added at " << added_at;
+                LOG_ERROR << "error processing track: " << playlist_track.serialize();
                 continue;
             }
             auto const& track_name = json_track_name.as_string();
