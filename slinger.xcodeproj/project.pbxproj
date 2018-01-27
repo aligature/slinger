@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		A148FA54201C4163004B3959 /* Security.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A148FA53201C4163004B3959 /* Security.framework */; };
+		A148FA56201C4172004B3959 /* CoreFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A148FA55201C4172004B3959 /* CoreFoundation.framework */; };
 		A1CB14C51B97D153000EF839 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A1CB14C41B97D153000EF839 /* main.cpp */; };
 /* End PBXBuildFile section */
 
@@ -23,6 +25,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		A148FA53201C4163004B3959 /* Security.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Security.framework; path = System/Library/Frameworks/Security.framework; sourceTree = SDKROOT; };
+		A148FA55201C4172004B3959 /* CoreFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreFoundation.framework; path = System/Library/Frameworks/CoreFoundation.framework; sourceTree = SDKROOT; };
 		A1CB14C11B97D153000EF839 /* slinger */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = slinger; sourceTree = BUILT_PRODUCTS_DIR; };
 		A1CB14C41B97D153000EF839 /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
 		A1DAAFDC1B97DC71000EF839 /* log_macros.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = log_macros.h; sourceTree = "<group>"; };
@@ -35,18 +39,30 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A148FA56201C4172004B3959 /* CoreFoundation.framework in Frameworks */,
+				A148FA54201C4163004B3959 /* Security.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		A148FA52201C4163004B3959 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				A148FA55201C4172004B3959 /* CoreFoundation.framework */,
+				A148FA53201C4163004B3959 /* Security.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		A1CB14B81B97D153000EF839 = {
 			isa = PBXGroup;
 			children = (
 				A1DAAFDF1B97DF27000EF839 /* spotify_api */,
 				A1CB14C31B97D153000EF839 /* slinger */,
 				A1CB14C21B97D153000EF839 /* Products */,
+				A148FA52201C4163004B3959 /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -143,7 +159,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				CLANG_CXX_LANGUAGE_STANDARD = "c++14";
+				CLANG_CXX_LANGUAGE_STANDARD = "c++17";
 				CLANG_CXX_LIBRARY = "libc++";
 				CLANG_ENABLE_MODULES = YES;
 				CLANG_ENABLE_OBJC_ARC = YES;
@@ -176,7 +192,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				HEADER_SEARCH_PATHS = /opt/local/include/boost;
-				MACOSX_DEPLOYMENT_TARGET = 10.10;
+				MACOSX_DEPLOYMENT_TARGET = 10.13;
 				MTL_ENABLE_DEBUG_INFO = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = macosx;
@@ -187,7 +203,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				CLANG_CXX_LANGUAGE_STANDARD = "c++14";
+				CLANG_CXX_LANGUAGE_STANDARD = "c++17";
 				CLANG_CXX_LIBRARY = "libc++";
 				CLANG_ENABLE_MODULES = YES;
 				CLANG_ENABLE_OBJC_ARC = YES;
@@ -213,7 +229,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				HEADER_SEARCH_PATHS = /opt/local/include/boost;
-				MACOSX_DEPLOYMENT_TARGET = 10.10;
+				MACOSX_DEPLOYMENT_TARGET = 10.13;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				SDKROOT = macosx;
 			};
@@ -229,7 +245,7 @@
 					/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include,
 					.,
 				);
-				LD_RUNPATH_SEARCH_PATHS = /opt/build/cpprest/lib;
+				LD_RUNPATH_SEARCH_PATHS = "/opt/build/cpprest/lib /opt/local/lib";
 				LIBRARY_SEARCH_PATHS = (
 					/opt/local/lib,
 					/opt/build/cpprest/lib,
@@ -251,9 +267,13 @@
 					"-lboost_program_options-mt",
 					"-lboost_log-mt",
 					"-lboost_filesystem-mt",
-					"-lcpprest",
+					/opt/build/cpprest/lib/libcpprest.a,
+					/opt/local/lib/libssl.a,
+					/opt/local/lib/libcrypto.a,
+					/opt/local/lib/libz.a,
 				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
 			};
 			name = Debug;
 		};
@@ -267,7 +287,7 @@
 					/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include,
 					.,
 				);
-				LD_RUNPATH_SEARCH_PATHS = /opt/build/cpprest/lib;
+				LD_RUNPATH_SEARCH_PATHS = "/opt/build/cpprest/lib /opt/local/lib";
 				LIBRARY_SEARCH_PATHS = (
 					/opt/local/lib,
 					/opt/build/cpprest/lib,
@@ -289,9 +309,13 @@
 					"-lboost_program_options-mt",
 					"-lboost_log-mt",
 					"-lboost_filesystem-mt",
-					"-lcpprest",
+					/opt/build/cpprest/lib/libcpprest.a,
+					/opt/local/lib/libssl.a,
+					/opt/local/lib/libcrypto.a,
+					/opt/local/lib/libz.a,
 				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
 			};
 			name = Release;
 		};
